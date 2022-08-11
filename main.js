@@ -1,42 +1,68 @@
-import './style.css'
-import globeMap from './globe.jpg';
-import pngEarth from './pngeart.png';
-import earth from './eart.jpg';
-// import * as THREE from 'three';
-// import OrbitControls from 'three-orbit-controls'
+// import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.125.2/build/three.module.js";
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.121.1/examples/jsm/controls/OrbitControls.js';
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-const renderer = new THREE.WebGLRenderer({
-  antialias: true
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 1000);
+
+var renderer = new THREE.WebGLRenderer();
+
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+var geometry = new THREE.SphereGeometry(2, 200, 200);
+var material = new THREE.MeshBasicMaterial({ color: 0x112448 });
+var globe = new THREE.Mesh(geometry, material);
+scene.add(globe);
+
+const controls = new OrbitControls(camera, renderer.domElement)
+
+scene.add(new THREE.AmbientLight(0xbbbbbb, 0.3));
+scene.background = new THREE.Color(0x0C2E4E);
+
+camera.position.z = 10;
+
+var vertexShader = [
+  'varying vec3 vNormal;',
+  'void main() {',
+  'vNormal = normalize( normalMatrix * normal );',
+  'gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );',
+  '}'
+].join('\n')
+
+var fragmentShader = [
+  'varying vec3 vNormal;',
+  'void main() {',
+  'float intensity = pow( 0.9 - dot( vNormal, vec3( 0, 0, 1 ) ), 12.0 );',
+  'gl_FragColor = vec4( 1, 1.0, 1.0, .09 ) * intensity;',
+  '}'
+].join('\n')
+
+var uniforms = THREE.UniformsUtils.clone({});
+var material = new THREE.ShaderMaterial({
+  uniforms: uniforms,
+  vertexShader: vertexShader,
+  fragmentShader: fragmentShader,
+  side: THREE.BackSide,
+  blending: THREE.AdditiveBlending,
+  transparent: true
 });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio)
-document.getElementById('app').appendChild(renderer.domElement);
 
-const sphere = new THREE.Mesh(new THREE.SphereGeometry(5, 50, 50), new THREE.MeshBasicMaterial({
-  map: new THREE.TextureLoader().load(pngEarth),
-  color:0x0C2E4E
-}));
+var mesh = new THREE.Mesh(geometry, material);
+mesh.scale.set(1.09, 1.09, 1.09);
+scene.add(mesh);
+
+// console.log(vertexShader)
+
+// Add camera controls
 
 
-scene.add(sphere)
-camera.position.z = 11
-let controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-controls.enableDamping = true
-controls.dampingFactor = 0.25
-controls.enableZoom = false
-
-function animate() {
-  requestAnimationFrame(animate);
-
-  sphere.rotation.y += 0.0015;
-  sphere.rotation.x += 0.0008;
+var render = function () {
   controls.update();
   renderer.render(scene, camera);
+  requestAnimationFrame(render);
 };
+render();
 
-animate();
-
+// renderer.render(scene, camera);
+console.log('Done')
